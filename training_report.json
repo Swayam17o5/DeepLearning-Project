@@ -1,0 +1,34 @@
+{
+  "accuracy": 0.894957959651947,
+  "loss": 0.2719929814338684,
+  "train_samples": 4756,
+  "val_samples": 1190,
+  "epochs_ran": 16,
+  "class_counts": {
+    "Happy": 1920,
+    "Sad": 1396,
+    "Energetic": 1440
+  },
+  "mean_prob_per_class": {
+    "Happy": 0.4173998236656189,
+    "Sad": 0.32194557785987854,
+    "Energetic": 0.26065438985824585
+  },
+  "confusion_matrix": [
+    [
+      451,
+      23,
+      6
+    ],
+    [
+      10,
+      336,
+      4
+    ],
+    [
+      66,
+      16,
+      278
+    ]
+  ]
+}

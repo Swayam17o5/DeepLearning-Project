@@ -1,0 +1,12 @@
+.git
+.gitignore
+venv311
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+Data
+Data.zip
+feature_cache.npz
+python-3.11.9-amd64.exe
+*.log

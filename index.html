@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deep Audio Vibe Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-color: #0b0c10;
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --happy-color: #ffd700;
+        --sad-color: #4facfe;
+        --energetic-color: #ff0844;
+        --text-primary: #e0e6ed;
+        --text-secondary: #8a9ba8;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Outfit", sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Abstract dynamic background orbs */
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.4;
+        z-index: 0;
+        animation: float 20s infinite ease-in-out alternate;
+      }
+
+      .orb-1 {
+        width: 400px;
+        height: 400px;
+        background: rgba(79, 172, 254, 0.5); /* Blue */
+        top: -100px;
+        left: -100px;
+      }
+
+      .orb-2 {
+        width: 500px;
+        height: 500px;
+        background: rgba(255, 8, 68, 0.3); /* Red/Pink */
+        bottom: -200px;
+        right: -100px;
+        animation-delay: -5s;
+      }
+
+      .orb-3 {
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 215, 0, 0.3); /* Gold */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-delay: -10s;
+      }
+
+      @keyframes float {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(50px, 50px) scale(1.1);
+        }
+      }
+
+      .container {
+        width: 100%;
+        max-width: 500px;
+        padding: 40px;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        position: relative;
+        transform: translateY(0);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      .container:hover {
+        transform: translateY(-5px);
+      }
+
+      .header {
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 28px;
+        font-weight: 800;
+        background: linear-gradient(90deg, #fff, #8a9ba8);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+
+      p.subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 300;
+      }
+
+      /* Upload Area */
+      .upload-zone {
+        border: 2px dashed var(--glass-border);
+        border-radius: 16px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .upload-zone:hover,
+      .upload-zone.dragover {
+        border-color: var(--sad-color);
+        background: rgba(79, 172, 254, 0.05);
+      }
+
+      .upload-zone input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .upload-icon {
+        font-size: 32px;
+        margin-bottom: 15px;
+        display: block;
+        color: var(--text-secondary);
+        transition: transform 0.3s ease;
+      }
+
+      .upload-zone:hover .upload-icon {
+        transform: translateY(-5px);
+        color: var(--text-primary);
+      }
+
+      .upload-text {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .upload-subtext {
+        display: block;
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 8px;
+      }
+
+      .status-badge {
+        width: fit-content;
+        margin: 2px auto 0;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-secondary);
+        box-shadow: 0 0 8px rgba(138, 155, 168, 0.7);
+      }
+
+      .status-badge.is-thinking {
+        color: #8bc2ff;
+        border-color: rgba(139, 194, 255, 0.45);
+        background: rgba(139, 194, 255, 0.08);
+      }
+
+      .status-badge.is-thinking .status-dot {
+        background: #8bc2ff;
+        box-shadow: 0 0 12px rgba(139, 194, 255, 0.85);
+        animation: statusPulse 1.2s ease-in-out infinite;
+      }
+
+      .status-badge.is-done {
+        color: #9af7ad;
+        border-color: rgba(154, 247, 173, 0.45);
+        background: rgba(154, 247, 173, 0.08);
+      }
+
+      .status-badge.is-done .status-dot {
+        background: #9af7ad;
+        box-shadow: 0 0 12px rgba(154, 247, 173, 0.85);
+      }
+
+      .status-badge.is-error {
+        color: #ff8f8f;
+        border-color: rgba(255, 143, 143, 0.5);
+        background: rgba(255, 143, 143, 0.08);
+      }
+
+      .status-badge.is-error .status-dot {
+        background: #ff8f8f;
+        box-shadow: 0 0 12px rgba(255, 143, 143, 0.85);
+      }
+
+      @keyframes statusPulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.75;
+        }
+        50% {
+          transform: scale(1.35);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.75;
+        }
+      }
+
+      /* Loading State */
+      .loader-container {
+        display: none;
+        text-align: center;
+        padding: 20px 0;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top: 3px solid #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Results Area */
+      .results-container {
+        display: none;
+        flex-direction: column;
+        gap: 20px;
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .result-title {
+        text-align: center;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-secondary);
+      }
+
+      .winner-vibe {
+        text-align: center;
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        transition: color 0.3s ease;
+      }
+
+      /* Progress Bars */
+      .stat-group {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .stat-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .stat-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .progress-bg {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 4px;
+        transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+      }
+
+      /* specific colors */
+      .stat-happy .progress-fill {
+        background: var(--happy-color);
+        box-shadow: 0 0 10px var(--happy-color);
+      }
+      .stat-sad .progress-fill {
+        background: var(--sad-color);
+        box-shadow: 0 0 10px var(--sad-color);
+      }
+      .stat-energetic .progress-fill {
+        background: var(--energetic-color);
+        box-shadow: 0 0 10px var(--energetic-color);
+      }
+
+      .stat-happy .label {
+        color: var(--happy-color);
+      }
+      .stat-sad .label {
+        color: var(--sad-color);
+      }
+      .stat-energetic .label {
+        color: var(--energetic-color);
+      }
+
+      /* Button to reset */
+      .btn-reset {
+        margin-top: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-reset:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="container">
+      <div class="header">
+        <h1>Audio Vibe Analysis</h1>
+        <p class="subtitle">CNN + Simple RNN Deep Learning Engine</p>
+      </div>
+
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="audioInput" accept=".wav,audio/wav" />
+        <span class="upload-icon">🎧</span>
+        <span class="upload-text">Click or drag a .wav file</span>
+        <span class="upload-subtext"
+          >Upload one WAV track for vibe analysis</span
+        >
+      </div>
+
+      <div class="status-badge is-idle" id="statusBadge" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="statusText">Ready</span>
+      </div>
+
+      <div class="loader-container" id="loader">
+        <div class="spinner"></div>
+        <p class="subtitle" id="loaderText">
+          Extracting Mel-Spectrogram features...
+        </p>
+      </div>
+
+      <div class="results-container" id="results">
+        <div class="result-title">Detected Vibe</div>
+        <div class="winner-vibe" id="winnerLabel">Happy</div>
+
+        <div class="stat-group">
+          <div class="stat-row stat-happy">
+            <div class="stat-labels">
+              <span class="label">Happy</span>
+              <span class="percent" id="pctHappy">0%</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill" id="fillHappy"></div>
+            </div>
+          </div>
+
+          <div class="stat-row stat-sad">
+            <div class="stat-labels">
+              <span class="label">Sad</span>
+              <span class="percent" id="pctSad">0%</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill" id="fillSad"></div>
+            </div>
+          </div>
+
+          <div class="stat-row stat-energetic">
+            <div class="stat-labels">
+              <span class="label">Energetic</span>
+              <span class="percent" id="pctEnergetic">0%</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill" id="fillEnergetic"></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-reset" onclick="resetUI()">
+          Analyze Another Track
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const uploadZone = document.getElementById("uploadZone");
+      const audioInput = document.getElementById("audioInput");
+      const statusBadge = document.getElementById("statusBadge");
+      const statusText = document.getElementById("statusText");
+      const loader = document.getElementById("loader");
+      const loaderText = document.getElementById("loaderText");
+      const results = document.getElementById("results");
+      const DEFAULT_LOADER_TEXT = "Extracting Mel-Spectrogram features...";
+      const DEFAULT_STATUS_TEXT = "Ready";
+
+      function getApiBaseUrl() {
+        // Prefer same-origin API when UI is served by FastAPI (recommended).
+        if (window.location.protocol !== "file:") {
+          return window.location.origin;
+        }
+
+        // Fallback for opening index.html directly from disk.
+        return "http://127.0.0.1:8001";
+      }
+
+      const colors = {
+        Happy: "#ffd700",
+        Sad: "#4facfe",
+        Energetic: "#ff0844",
+      };
+
+      function setStatus(state, text) {
+        statusBadge.className = `status-badge is-${state}`;
+        statusText.textContent = text;
+      }
+
+      function setInputVisible(visible) {
+        uploadZone.style.display = visible ? "block" : "none";
+      }
+
+      async function getResponseErrorMessage(response) {
+        try {
+          const payload = await response.json();
+          if (typeof payload === "string") return payload;
+          if (payload && typeof payload.detail === "string")
+            return payload.detail;
+          return payload ? JSON.stringify(payload) : "";
+        } catch (_) {
+          try {
+            const text = await response.text();
+            return text || "";
+          } catch (__unused) {
+            return "";
+          }
+        }
+      }
+
+      function resetUI() {
+        results.style.display = "none";
+        loader.style.display = "none";
+        loaderText.textContent = DEFAULT_LOADER_TEXT;
+        setInputVisible(true);
+        setStatus("idle", DEFAULT_STATUS_TEXT);
+        audioInput.value = "";
+
+        document.getElementById("fillHappy").style.width = "0%";
+        document.getElementById("fillSad").style.width = "0%";
+        document.getElementById("fillEnergetic").style.width = "0%";
+      }
+
+      async function processFile(file) {
+        if (!file || !file.name.toLowerCase().endsWith(".wav")) {
+          alert("Please upload a .wav file.");
+          resetUI();
+          return;
+        }
+
+        setInputVisible(false);
+        loader.style.display = "block";
+        loaderText.textContent = DEFAULT_LOADER_TEXT;
+        setStatus("thinking", "Thinking...");
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const response = await fetch(`${getApiBaseUrl()}/predict`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const detail = await getResponseErrorMessage(response);
+            const detailText = detail ? `: ${detail}` : "";
+            throw new Error(`Server error (${response.status})${detailText}`);
+          }
+
+          const data = await response.json();
+          showResults(data);
+        } catch (err) {
+          const message = String(err && err.message ? err.message : err);
+          if (message.includes("Failed to fetch")) {
+            alert(
+              "Could not reach the backend API on port 8000. Start FastAPI and try again.",
+            );
+          } else {
+            alert(`Failed to analyze audio: ${message}`);
+          }
+          console.error(err);
+          setStatus("error", "Error");
+          resetUI();
+        }
+      }
+
+      uploadZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadZone.classList.add("dragover");
+      });
+
+      uploadZone.addEventListener("dragleave", () => {
+        uploadZone.classList.remove("dragover");
+      });
+
+      uploadZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove("dragover");
+        if (e.dataTransfer.files.length) {
+          audioInput.files = e.dataTransfer.files;
+          processFile(audioInput.files[0]);
+        }
+      });
+
+      audioInput.addEventListener("change", () => {
+        if (audioInput.files.length) {
+          processFile(audioInput.files[0]);
+        }
+      });
+
+      function showResults(data) {
+        loader.style.display = "none";
+        results.style.display = "flex";
+
+        const winner = data.vibe;
+        const scores = data.distribution || data.scores || {};
+
+        const winnerEl = document.getElementById("winnerLabel");
+        winnerEl.innerText = winner;
+        winnerEl.style.color = colors[winner];
+        setStatus("done", `Done: ${winner}`);
+
+        setTimeout(() => {
+          const updateBar = (id, label) => {
+            const raw = Number(scores[label] || 0);
+            const val = (raw * 100).toFixed(1);
+            document.getElementById(`fill${id}`).style.width = `${val}%`;
+            document.getElementById(`pct${id}`).innerText = `${val}%`;
+          };
+
+          updateBar("Happy", "Happy");
+          updateBar("Sad", "Sad");
+          updateBar("Energetic", "Energetic");
+        }, 100);
+      }
+    </script>
+  </body>
+</html>
